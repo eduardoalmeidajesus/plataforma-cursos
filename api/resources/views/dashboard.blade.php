@@ -1,0 +1,113 @@
+@extends('layouts.app')
+
+@section('content')
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+<style>
+    .card-hover {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: none;
+        border-radius: 1rem;
+    }
+
+    .card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0 25px rgba(0, 123, 255, 0.2);
+    }
+
+    .card-body i {
+        font-size: 2.2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .card-body h5 {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .text-orange {
+    color: #fd7e14 !important;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-10">
+            <div class="text-center">
+                <h2 class="fw-bold text-orange">Bem-vindo à Plataforma de Cursos</h2>
+                <p class="text-muted">Gerencie seus cursos, vendas, categorias e mais.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+
+        <div class="col-md-4">
+            <a href="{{ route('vendas.index') }}" class="text-decoration-none">
+                <div class="card card-hover shadow text-center p-4">
+                    <div class="card-body">
+                        <i class="bi bi-cart text-success"></i>
+                        <h5 class="text-dark mt-2">Gerenciar Vendas</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{{ route('clientes.index') }}" class="text-decoration-none">
+                <div class="card card-hover shadow text-center p-4">
+                    <div class="card-body">
+                        <i class="bi bi-people text-info"></i>
+                        <h5 class="text-dark mt-2">Gerenciar Clientes</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{{ route('cursos.index') }}" class="text-decoration-none">
+                <div class="card card-hover shadow text-center p-4">
+                    <div class="card-body">
+                        <i class="bi bi-journal-code text-warning"></i>
+                        <h5 class="text-dark mt-2">Gerenciar Cursos</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{{ route('categorias.index') }}" class="text-decoration-none">
+                <div class="card card-hover shadow text-center p-4">
+                    <div class="card-body">
+                        <i class="bi bi-tags text-secondary"></i>
+                        <h5 class="text-dark mt-2">Categorias</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{{ route('professores.index') }}" class="text-decoration-none">
+                <div class="card card-hover shadow text-center p-4">
+                    <div class="card-body">
+                        <i class="bi bi-person-badge text-dark"></i>
+                        <h5 class="text-dark mt-2">Professores</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4">
+            <a href="{{ route('relatorios.index') }}" class="text-decoration-none">
+                <div class="card card-hover shadow text-center p-4">
+                    <div class="card-body">
+                        <i class="bi bi-bar-chart text-primary"></i>
+                        <h5 class="text-dark mt-2">Relatórios</h5>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+    </div>
+</div>
+@endsection

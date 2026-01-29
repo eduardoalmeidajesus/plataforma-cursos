@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <title>Relatórios</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script defer>
+        const API_RELATORIO = 'http://localhost:8000/api/relatorios';
+
+        async function buscarRelatorio(e) {
+            e.preventDefault();
+            const tipo = document.getElementById('tipo').value;
+            const inicio = document.getElementById('inicio').value;
+            const fim = document.getElementById('fim').value;
+
+            try {
+                const res = await fetch(`${API_RELATORIO}/${tipo}?inicio=${inicio}&fim=${fim}`);
+                
+                if (!res.ok) {
+                    throw new Error('Erro ao buscar dados');
+                }
+                
+                const dados = await res.json();
+                renderizarTabela(tipo, dados);
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Erro ao buscar dados do relatório. Verifique o console para mais detalhes.');
+            }
+        }
+
+        function renderizarTabela(tipo, dados) {
+            const tbody = document.getElementById('resultados');
+            tbody.innerHTML = '';
+            
+            // Corpo da tabela
+            dados.forEach(d => {
+                const tr = document.createElement('tr');
+                
+                switch (tipo) {
+                    case 'vendas':
+                        tr.innerHTML = `
+                            <td>${d.curso?.titulo || '-'}</td>
+                            <td>${d.cliente?.nome || '-'}</td>
+                            <td>R$ ${parseFloat(d.valor).toFixed(2)}</td>
+                            <td>${d.condicao_pagamento || '-'}</td>
+                            <td>${d.quantidade_parcelas || '—'}</td>
+                            <td>${new Date(d.created_at).toLocaleString('pt-BR')}</td>`;
+                        break;
+                    case 'clientes':
+                        tr.innerHTML = `
+                            <td>${d.nome}</td>
+                            <td>${d.email}</td>
+                            <td>${new Date(d.created_at).toLocaleString('pt-BR')}</td>`;
+                        break;
+                    case 'cursos':
+                        tr.innerHTML = `
+                            <td>${d.titulo}</td>
+                            <td>${d.professor?.nome || '-'}</td>
+                            <td>${d.categoria?.nome || '-'}</td>
+                            <td>R$ ${parseFloat(d.preco).toFixed(2)}</td>
+                            <td>${new Date(d.created_at).toLocaleString('pt-BR')}</td>`;
+                        break;
+                    case 'categorias':
+                        tr.innerHTML = `
+                            <td>${d.nome}</td>
+                            <td>${new Date(d.created_at).toLocaleString('pt-BR')}</td>`;
+                        break;
+                    case 'professores':
+                        tr.innerHTML = `
+                            <td>${d.nome}</td>
+                            <td>${d.email}</td>
+                            <td>${new Date(d.created_at).toLocaleString('pt-BR')}</td>`;
+                        break;
+                }
+                
+                tbody.appendChild(tr);
+            });
+        }
+
+        function exportar(formato) {
+            if (formato === 'pdf') {
+                exportarPDF();
+            } else {
+                // Mantenha o código existente para CSV
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `http://localhost:8000/api/relatorios/exportar-csv`;
+                form.target = '_blank';
+
+                // Adiciona token CSRF
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = csrfToken;
+                form.appendChild(csrfInput);
+
+                // Adiciona outros campos
+                const inicio = document.getElementById('inicio').value;
+                const fim = document.getElementById('fim').value;
+                const tipo = document.getElementById('tipo').value;
+
+                const addInput = (name, value) => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = name;
+                    input.value = value;
+                    form.appendChild(input);
+                };
+
+                addInput('inicio', inicio);
+                addInput('fim', fim);
+                addInput('tipo', tipo);
+
+                document.body.appendChild(form);
+                form.submit();
+                setTimeout(() => form.remove(), 100);
+            }
+        }
+
+        function exportarPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const tipo = document.getElementById('tipo').value;
+            const inicio = document.getElementById('inicio').value;
+            const fim = document.getElementById('fim').value;
+            
+            // Título do relatório
+            doc.setFontSize(18);
+            doc.text(`Relatório de ${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`, 14, 15);
+            
+            // Período
+            doc.setFontSize(12);
+            doc.text(`Período: ${formatarData(inicio)} até ${formatarData(fim)}`, 14, 25);
+            
+            // Cabeçalhos da tabela
+            const headers = {
+                vendas: ['Curso', 'Cliente', 'Valor', 'Condição', 'Parcelas', 'Data'],
+                clientes: ['Nome', 'Email', 'Data'],
+                cursos: ['Título', 'Professor', 'Categoria', 'Preço', 'Data'],
+                categorias: ['Nome', 'Data'],
+                professores: ['Nome', 'Email', 'Data']
+            };
+            
+            // Dados da tabela
+            const rows = [];
+            const tbody = document.getElementById('resultados');
+            const linhas = tbody.querySelectorAll('tr');
+            
+            linhas.forEach(linha => {
+                const celulas = linha.querySelectorAll('td');
+                const rowData = [];
+                celulas.forEach(celula => {
+                    rowData.push(celula.textContent.trim());
+                });
+                rows.push(rowData);
+            });
+            
+            doc.autoTable({
+                head: [headers[tipo]],
+                body: rows,
+                startY: 30,
+                styles: {
+                    fontSize: 10,
+                    cellPadding: 3,
+                    overflow: 'linebreak'
+                },
+                headStyles: {
+                    fillColor: [52, 58, 64],
+                    textColor: 255
+                }
+            });
+            
+            // Salva o PDF
+            doc.save(`relatorio_${tipo}.pdf`);
+        }
+
+        function formatarData(dataString) {
+            const data = new Date(dataString);
+            return data.toLocaleDateString('pt-BR');
+        }
+
+        // Configura datas padrão (início e fim do mês atual)
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            
+            document.getElementById('inicio').valueAsDate = firstDay;
+            document.getElementById('fim').valueAsDate = lastDay;
+        });
+    </script>
+</head>
+<body class="bg-light">
+    <div class="container mt-3">
+      <a href="index.html" class="btn btn-secondary mb-3">
+          <i class="bi bi-arrow-left"></i> Voltar
+      </a>
+    </div>
+    <div class="container mt-5">
+        <h1>Relatórios</h1>
+
+        <form onsubmit="buscarRelatorio(event)" class="row mb-4">
+            <div class="col-md-3">
+                <label for="inicio" class="form-label">Data Início</label>
+                <input type="date" id="inicio" class="form-control" required>
+            </div>
+            <div class="col-md-3">
+                <label for="fim" class="form-label">Data Fim</label>
+                <input type="date" id="fim" class="form-control" required>
+            </div>
+            <div class="col-md-3">
+                <label for="tipo" class="form-label">Tipo</label>
+                <select id="tipo" class="form-select" required>
+                    <option value="vendas">Vendas</option>
+                    <option value="clientes">Clientes</option>
+                    <option value="cursos">Cursos</option>
+                    <option value="categorias">Categorias</option>
+                    <option value="professores">Professores</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-primary w-100">Filtrar</button>
+            </div>
+        </form>
+
+        <div class="mb-3">
+            <button onclick="exportar('pdf')" class="btn btn-danger me-2">Exportar PDF</button>
+            <button onclick="exportar('csv')" class="btn btn-success">Exportar CSV</button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr id="cabecalho"></tr>
+                </thead>
+                <tbody id="resultados"></tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
