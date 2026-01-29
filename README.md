@@ -89,5 +89,8 @@ A interface inicia em uma **página principal** (index.html), que fornece acesso
 ## 🧠 Observações
 
 O backend (API REST) é executado separadamente por meio do comando php artisan serve.
+
 A interface web (client) é servida pelo Apache do XAMPP, a partir da pasta htdocs.
+
 A comunicação entre client e servidor ocorre exclusivamente por meio de requisições HTTP, utilizando JSON.
+
